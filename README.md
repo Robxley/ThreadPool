@@ -16,7 +16,7 @@ The first arrived on the task, runs the task !
 void main()
 {
 	auto & pool = ThreadPool::singleton(2);
-
+	
 	auto thA = pool.enqueue([&pool]
 	{
 		auto thA_1 = pool.enqueue([]{
