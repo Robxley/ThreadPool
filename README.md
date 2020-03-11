@@ -1,18 +1,19 @@
 # Thread pool c++ 17
 
-A simple C++17 Thread Pool implementation supporting "internal" task without interlock.
+A simple C++17 Thread Pool implementation supporting "internal" tasks without interlock.
 
 # Philosophy
 
 1. A task is added to the pool thread.     
 2. The pool thread is running on the task list.   
-3. The result of a task is needed. If the task has not been completed or has not been started by the thread pool, the task is executed locally and removed from the thread pool.
+3. When the result of a task is required, if the task is not completed and has not been started by the thread pool, this task is executed thread-locally and removed from the thread pool.
 
 One rule :
 The first arrived on the task, runs the task !
 
 # Exemple :
 
+```cpp
 void main()
 {
 	auto & pool = ThreadPool::singleton(2);
@@ -49,3 +50,4 @@ void main()
 	thB.join();
 	thA.join();
 }
+```
