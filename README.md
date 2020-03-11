@@ -1,6 +1,6 @@
-# Thread pool c++ 11
+# Thread pool c++ 17
 
-A simple C++11 Thread Pool implementation supporting the task interlock.
+A simple C++17 Thread Pool implementation supporting "internal" task without interlock.
 
 # Philosophy
 
