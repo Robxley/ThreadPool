@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <vector>
 #include <queue>
 #include <mutex>
@@ -8,7 +7,6 @@
 #include <future>
 #include <functional>
 #include <type_traits>
-
 
 namespace utl
 {
@@ -143,9 +141,4 @@ namespace utl
 
 	};
 
-
-
-#ifdef _DEBUG
-	void unit_test_ThreadPool2();
-#endif
 }

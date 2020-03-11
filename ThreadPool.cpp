@@ -1,13 +1,5 @@
 #include "ThreadPool.h"
 
-#ifdef _DEBUG
-
-#include <iostream>
-
-#endif // DEBUG
-
-
-
 namespace utl
 {
 
@@ -56,14 +48,4 @@ namespace utl
 			worker.join();
 	}
 
-
-#ifdef _DEBUG
-	void unit_test_ThreadPool2()
-	{
-		auto & instance = thread_pool::instance();
-
-		
-		auto test = instance.enqueue([]() { std::cout << "test1"; });
-	}
-#endif // DEBUG
 }
