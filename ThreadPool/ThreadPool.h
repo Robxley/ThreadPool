@@ -1,118 +1,144 @@
-
-#ifndef THREAD_POOL_H
-#define THREAD_POOL_H
-
 #pragma once
 
 #include <vector>
 #include <queue>
-#include <memory>
-#include <thread>
 #include <mutex>
 #include <condition_variable>
 #include <future>
 #include <functional>
-#include <stdexcept>
-#include <atomic>
+#include <type_traits>
 
-#include "ThreadTask.h"
-
-class ThreadPool {
-	ThreadPool(size_t);
-public:
-
-	static ThreadPool & singleton(size_t size = std::thread::hardware_concurrency())
+namespace utl
+{
+	namespace
 	{
-		static ThreadPool singleton(size);
-		return singleton;
+		//Result trick when result is 'void' type
+		template<class T>
+		struct threaded_task_result { protected: T result; };
+		template <>
+		struct threaded_task_result<void> {};
 	}
 
-	template<class F>
-	void enqueue(const ThreadTask<F>& task)
+	template<class T>
+	class threaded_task : public threaded_task_result<T>
 	{
+		friend class thread_pool;
+
+		std::function<void()> fct;
+		std::future<T> future;
+
+		//private constructeur
+		threaded_task(const threaded_task&) = delete;
+		threaded_task& operator=(const threaded_task&) = delete;
+
+	public:
+
+		threaded_task() {};
+
+		template<class F, class... Args>
+		threaded_task(F&& f, Args&&... args) {
+			set(std::forward<F>(f), std::forward<Args>(args)...);
+		}
+
+		threaded_task(threaded_task&& task)
 		{
-			std::unique_lock<std::mutex> lock(queue_mutex);
+			this->fct = std::move(task.fct);
+			this->future = std::move(task.future);
+		}
+
+		void operator=(threaded_task&& task)
+		{
+			this->fct = std::move(task.fct);
+			this->future = std::move(task.future);
+		}
+
+		template<class F, class... Args>
+		void set(F&& f, Args&&... args)
+		{
+			using result_t = std::invoke_result_t<F, Args...>;
+			using packaged_tr = std::packaged_task<result_t()>;
+
+			auto task = packaged_tr(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
+
+			this->future = task.get_future();
+
+			using atomic_task = std::pair<std::atomic_bool, packaged_tr >;
+			auto atask = std::make_shared<atomic_task>(false, std::move(task));
+
+			this->fct = [atask]() mutable
+			{
+				if (atask->first.exchange(true) == false)
+					atask->second();
+			};
+		}
+
+		auto get()
+		{
+			fct(); //Start the function in the current thread if the function is not yet called
+			if constexpr (std::is_void_v<T>)
+			{
+				if (future.valid()) future.get();
+			}
+			else
+			{
+				if (future.valid()) result = future.get();
+				return result;
+			}
+		}
+	};
+
+	class thread_pool
+	{
+		// need to keep track of threads so we can join them
+		std::vector< std::thread > workers;
+
+		// the task queue
+		std::queue< std::function<void()> > tasks;
+
+		// synchronization
+		std::mutex queue_mutex;
+		std::condition_variable condition;
+		bool stop = false;
+
+		//Number of workers (threads)
+		size_t pool_size = 0;
+
+	public:
+
+		~thread_pool();
+		thread_pool(size_t);
+		thread_pool() : thread_pool(std::thread::hardware_concurrency()) {};
+
+		static thread_pool & instance(size_t size = std::thread::hardware_concurrency())
+		{
+			static thread_pool singleton(size);
+			return singleton;
+		}
+
+
+		template<class T>
+		void enqueue(const threaded_task<T> & task)
+		{
 			// don't allow enqueueing after stopping the pool
 			if (stop)
 				throw std::runtime_error("enqueue on stopped ThreadPool");
-			tasks.emplace(task.fct);
+			{
+				std::unique_lock<std::mutex> lock(queue_mutex);
+				tasks.emplace(task.fct);
+			}
+			condition.notify_one();
 		}
 
-		condition.notify_one();
-	}
 
-	// add new work item to the pool
-	template<class F, class... Args>
-	auto enqueue(F&& f, Args&&... args) -> ThreadTask<typename std::invoke_result_t<F, Args...>>
-	{
-		auto task = MakeTask(std::forward<F>(f), std::forward<Args>(args)...);
-		enqueue(task);
-		return task;
-	}
+		template<class F, class... Args>
+		auto enqueue(F&& f, Args&&... args) -> threaded_task<std::invoke_result_t<F, Args...>>
+		{
+			using result_t = std::invoke_result_t<F, Args...>;
+			threaded_task<result_t> new_task(std::forward<F>(f), std::forward<Args>(args)...);
+			this->enqueue<result_t>(new_task);
+			return new_task;
+		}
 
-	~ThreadPool();
-
-private:
-
-	// need to keep track of threads so we can join them
-	std::vector< std::thread > workers;
-	
-	// the task queue
-	std::queue< std::function<void()> > tasks;
-
-	// synchronization
-	std::mutex queue_mutex;
-	std::condition_variable condition;
-	bool stop;
-
-	size_t pool_size;
-};
-
-// the constructor just launches some amount of workers
-inline ThreadPool::ThreadPool(size_t threads)
-	: stop(false), pool_size(threads)
-{
-	workers.reserve(threads);
-
-	for (size_t i = 0; i < threads; ++i)
-	{
-		workers.emplace_back(
-			[this,i]
-			{
-				for (;;)
-				{
-					std::function<void()> task;
-					{
-						std::unique_lock<std::mutex> lock(this->queue_mutex);
-						this->condition.wait(lock,
-							[this] { return this->stop || !this->tasks.empty(); });
-						
-						if (this->stop && this->tasks.empty())
-							return;
-
-						task = std::move(this->tasks.front());
-						this->tasks.pop();
-					}
-
-					task();
-				}
-			}
-		);
-	}
-
+	};
 
 }
-
-// the destructor joins all threads
-inline ThreadPool::~ThreadPool()
-{
-	{
-		std::unique_lock<std::mutex> lock(queue_mutex);
-		stop = true;
-	}
-	condition.notify_all();
-	for (std::thread &worker : workers)
-		worker.join();
-}
-
-#endif
