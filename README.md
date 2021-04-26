@@ -4,8 +4,8 @@ A simple C++17 Thread Pool implementation supporting "internal" tasks without in
 
 # Philosophy
 
-1. A task is added to the pool thread.     
-2. The pool thread is running on the task list.   
+1. A task is added to the thread pool.     
+2. The thread pool is running on the task list.   
 3. When the result of a task is required, if the task is not completed and has not been started by the thread pool, this task is executed thread-locally and removed from the thread pool.
 
 One rule :
