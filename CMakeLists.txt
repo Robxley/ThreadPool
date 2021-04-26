@@ -31,5 +31,5 @@ find_package(Threads REQUIRED)
 # __________________________________________
 # __ Subdirectories
 
-add_subdirectory(ThreadPool)
-add_subdirectory(Tests)
+add_subdirectory(thread_pool)
+add_subdirectory(tests)

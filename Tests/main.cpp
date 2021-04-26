@@ -2,7 +2,7 @@
 #include <iostream>
 #include <mutex>
 
-#include "ThreadPool.h"
+#include "thread_pool.h"
 
 //Make cout thread safe
 std::mutex m_safe_cout;
@@ -37,23 +37,23 @@ using Foo = struct
 /// </summary>
 void SimpleTasks()
 {
+
 	std::cout << "Simple Tasks:" << std::endl;
 
 	//Create/Get a pool thread (singleton) with a thread size set to 2.
-	auto & pool = ThreadPool::singleton(2);
-
+	auto & pool = bhd::thread_pool::instance(2);
 
 	//Classic task creation - Boring task creation...
 	//--------------------------------------------
-	using ThreadTaskVoid = ThreadTask<void>;
-	ThreadTaskVoid task_constructor([]{
+	using task_void_t = bhd::threaded_task<void>;
+	task_void_t task_constructor([]{
 		ThreadVerbose vth("Task constructor");
 		ThreadSleep(3);
 	});
 	pool.enqueue(task_constructor);
 
-	using ThreadTaskFloat = ThreadTask<float>;
-	ThreadTaskFloat task_setter;
+	using task_float_t = bhd::threaded_task<float>;
+	task_float_t task_setter;
 	task_setter.set( [] {
 		ThreadVerbose vth("Task setter");
 		ThreadSleep(2);
@@ -92,13 +92,13 @@ void SimpleTasks()
 
 	//Join party
 	{
-		task_constructor.join();					// task returning a "void value"
-		float setter_result = task_setter.join();	// task returning a float value
+		task_constructor.get();					// task returning a "void value"
+		float setter_result = task_setter.get();	// task returning a float value
 
-		task_void.join();							// task returning a void value
-		int int_result = task_int.join();			// task returning a int value
-		Foo foo_result = task_foo.join();			// task returning a custom structure value
-		std::string str = task_vector.join();       // task returning a string structure value
+		task_void.get();							// task returning a void value
+		int int_result = task_int.get();			// task returning a int value
+		Foo foo_result = task_foo.get();			// task returning a custom structure value
+		std::string str = task_vector.get();        // task returning a string structure value
 
 		safe_cout("Task using setter : "			<< setter_result);
 		safe_cout("Task int result: "				<< int_result);
@@ -120,7 +120,7 @@ void TryDeadLock()
 	std::cout << "Try dead locks:" << std::endl;
 
 	//Create/Get a pool thread (singleton) with a thread size set to 2.
-	auto & pool = ThreadPool::singleton(2);
+	auto & pool = bhd::thread_pool::instance(2);
 
 	//Fill completely the thread pool (of size 2) with two tasks.
 	//Each of these tasks creates also two new tasks.
@@ -142,8 +142,8 @@ void TryDeadLock()
 			ThreadSleep(2);
 		});
 
-		thA_1.join();
-		thA_2.join();
+		thA_1.get();
+		thA_2.get();
 	});
 	
 	//Create a task containing two tasks
@@ -162,13 +162,13 @@ void TryDeadLock()
 			ThreadSleep(2);
 		});
 
-		thB_1.join();
-		thB_2.join();
+		thB_1.get();
+		thB_2.get();
 	});
 
 
-	thB.join();
-	thA.join();
+	thB.get();
+	thA.get();
 }
 
 
