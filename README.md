@@ -16,7 +16,7 @@ The first arrived on the task, runs the task !
 ```cpp
 void main()
 {
-	auto & pool = ThreadPool::singleton(2);
+	auto & pool = thread_pool::instance(2);
 	
 	auto thA = pool.enqueue([&pool]
 	{
@@ -27,8 +27,8 @@ void main()
 		    // Do something crasy!
 		});
 
-		thA_1.join();
-		thA_2.join();
+		thA_1.get();
+		thA_2.get();
 	});
 	
 	auto thB = pool.enqueue([&pool]
@@ -42,12 +42,12 @@ void main()
 			// something
 		});
 
-		thB_1.join();
-		thB_2.join();
+		thB_1.get();
+		thB_2.get();
 	});
 
 
-	thB.join();
-	thA.join();
+	thB.get();
+	thA.get();
 }
 ```
