@@ -3,18 +3,18 @@
 # Create toolkit source files list
 FILE(GLOB LOCAL_FILE_SRC *.cpp)
 
-add_executable(tests ${LOCAL_FILE_SRC})
+add_executable(test_thread_pool ${LOCAL_FILE_SRC})
 
-target_include_directories(tests 
+target_include_directories(test_thread_pool 
                             PUBLIC
                                 ${PROJECT_SOURCE_DIR}/thread_pool)
 
-target_link_libraries(tests 
+target_link_libraries(test_thread_pool 
                         PUBLIC 
                             thread_pool)
 
 if (WIN32)
-    target_compile_options(tests PRIVATE /W3 /WX)
+    target_compile_options(test_thread_pool PRIVATE /W3 /WX)
 else()
-    target_compile_options(tests PRIVATE -w)
+    target_compile_options(test_thread_pool PRIVATE -w)
 endif()
