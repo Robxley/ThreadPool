@@ -30,7 +30,9 @@ namespace bhd
 	class threaded_task : public details::threaded_task_result<T>
 	{
 		friend class thread_pool;
-		using TRef = threaded_task_result<T>::TRef;	//reference on the result T or void
+
+		using TRef = typename details::threaded_task_result<T>::TRef;	// Reference on the result T or void
+		using TCRef = typename details::threaded_task_result<T>::TCRef;	// Const reference for result
 
 		std::function<void()> fct;
 		std::future<T> future;
@@ -89,8 +91,8 @@ namespace bhd
 			}
 			else
 			{
-				if (future.valid()) result = future.get();
-				return result;
+				if (future.valid()) this->result = future.get();
+				return this->result;
 			}
 		}
 	};

@@ -4,3 +4,5 @@
 
 /.vs
 /out/build/x64-Debug
+/bin/Debug/test_thread_pool.exe
+/bin/Debug/test_thread_pool.pdb
