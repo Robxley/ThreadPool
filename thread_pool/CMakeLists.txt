@@ -1,4 +1,7 @@
-# Lib - thread_pool
+GET_FILENAME_COMPONENT(LAST_FOLDER_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME_WE)
+project(${LAST_FOLDER_NAME})
+set(${PROJECT_NAME}_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+message(STATUS "📚 Library: ${PROJECT_NAME} - ${PROJECT_NAME}_DIR: ${${PROJECT_NAME}_DIR}")
 
 # Create toolkit source files list
 FILE(GLOB LOCAL_FILE_SRC *.cpp)
