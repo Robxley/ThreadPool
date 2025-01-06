@@ -73,9 +73,9 @@ namespace bhd
 			this->future = task.get_future();
 
 			using atomic_task = std::pair<std::atomic_bool, packaged_tr >;
-			auto atask = std::make_shared<atomic_task>(false, std::move(task));
+			//auto atask = std::make_shared<atomic_task>(false, std::move(task));
 
-			this->fct = [atask]() mutable
+			this->fct = [atask = std::make_shared<atomic_task>(false, std::move(task))]() mutable
 			{
 				if (atask->first.exchange(true) == false)
 					atask->second();
