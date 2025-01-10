@@ -90,6 +90,16 @@ void SimpleTasks()
 		return std::string{"abcd"};
 	});
 
+
+	auto task_move_impl = pool.enqueue([]
+	{
+		ThreadVerbose vth("Task move impl");
+		ThreadSleep(1);
+		return std::string{"Task move impl end"};
+	});
+
+	auto task_move_impl2 = std::move(task_move_impl);
+
 	//Join party
 	{
 		task_constructor.get();					// task returning a "void value"
@@ -104,6 +114,9 @@ void SimpleTasks()
 		safe_cout("Task int result: "				<< int_result);
 		safe_cout("Task foo structure result: "		<< foo_result.x << ":" << foo_result.y);
 		safe_cout("Task vector result: "			<< str.c_str());
+
+		//task_move_impl.get();			// impossible to get the result from a moved task
+		task_move_impl2.get();
 	}
 
 }

@@ -50,17 +50,8 @@ namespace bhd
 			set(std::forward<F>(f), std::forward<Args>(args)...);
 		}
 
-		threaded_task(threaded_task&& task)
-		{
-			this->fct = std::move(task.fct);
-			this->future = std::move(task.future);
-		}
-
-		void operator=(threaded_task&& task)
-		{
-			this->fct = std::move(task.fct);
-			this->future = std::move(task.future);
-		}
+		threaded_task(threaded_task&& ) = default;
+		threaded_task& operator=(threaded_task&&) = default;
 
 		template<class F, class... Args>
 		void set(F&& f, Args&&... args)
